@@ -3,24 +3,45 @@ import { Book, Search, ShoppingCart } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import BookCard from '@/components/common/book.card';
-import fs from 'fs';
-import path from 'path';
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import Navbar from '@/components/common/navbar';
 import { useTheme } from '@/theme.provider';
+import axios from 'axios';
+import AppSpinner from '@/components/common/spinner';
 
 const imagePath = "/defaultbook.jpg";
 
 export default function BooksPage(props) {
 
   const { theme } = useTheme();
+  const [books, setBooks] = useState([]);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await axios.get('/api/books/allbooks');
+        setBooks(response.data);
+        setFilteredBooks(response.data)
+      } catch (error) {
+        console.error('Error fetching books:', error);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  if(!books){
+    return(
+      <><AppSpinner/></>
+    )
+  }
 
 
-  const { books } = props;
   const [searchTerm, setSearchTerm] = useState('')
-  const [filteredBooks, setFilteredBooks] = useState(books)
+  const [filteredBooks, setFilteredBooks] = useState(books);
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -88,16 +109,3 @@ export default function BooksPage(props) {
     </div>
   );
 }
-
-export const getStaticProps = async () => {
-  const filePath = path.join(process.cwd(), 'Data.json');
-  const jsonData = fs.readFileSync(filePath, 'utf-8');
-  const books = JSON.parse(jsonData).books;
-
-  return {
-    props: {
-      books,
-    },
-    revalidate: 3600
-  };
-};

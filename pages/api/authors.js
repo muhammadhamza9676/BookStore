@@ -1,30 +1,25 @@
-import path from 'path'
-import fs from 'fs'
+import { connectToDatabase } from '@/lib/db';
+import AuthorModel from '@/models/Author';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
 
-    const filePath = path.join(process.cwd(), 'Data.json')
+    await connectToDatabase();
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Data file not found' })
-    }
-    const jsonData = fs.readFileSync(filePath, 'utf-8')
+    const authors = await AuthorModel.find();
 
-    let data;
-    try {
-      data = JSON.parse(jsonData)
-    } catch (error) {
-      return res.status(500).json({ error: 'Error parsing JSON data' })
+    if (!authors || authors.length === 0) {
+      return res.status(404).json({ error: 'No authors found' });
     }
 
-    if (!data.authors || data.authors.length === 0) {
-      return res.status(404).json({ error: 'No authors found' })
-    }
-
-    res.status(200).json({ authors: data.authors })
-
+    res.status(200).json({ authors });
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error', details: error.message })
+    console.error('Error fetching authors:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }
+

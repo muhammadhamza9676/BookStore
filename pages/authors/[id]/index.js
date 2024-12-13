@@ -1,11 +1,10 @@
 
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import BookCard from '@/components/common/book.card';
 import AuthorInfo from '@/components/common/author.info';
-import path from 'path';
-import fs from 'fs';
 import Navbar from '@/components/common/navbar';
+import { ArrowLeft } from 'lucide-react';
+
 
 export default function AuthorDetailPage({ author, authorBooks, imgPath }) {
   const notableWorks = ["The Great Fall", "Tender Is the Night", "This Side of Paradise"];
@@ -46,28 +45,28 @@ export default function AuthorDetailPage({ author, authorBooks, imgPath }) {
   );
 }
 
-export async function getServerSideProps(context) {
-  const { id } = context.params;
+export async function getServerSideProps({ params }) {
+  const { id } = params;
 
-  const filePath = path.join(process.cwd(), 'Data.json');
-  const jsonData = fs.readFileSync(filePath, 'utf-8');
-  const data = JSON.parse(jsonData);
+  try {
+    const response = await fetch(`http://localhost:3000/api/authors/${id}`);
+    const data = await response.json();
 
-  const author = data.authors.find((auth) => auth.id === id);
+    if (!response.ok) {
+      return { notFound: true };
+    }
 
-  if (!author) {
+    return {
+      props: {
+        author: data.author,
+        authorBooks: data.books,
+        imgPath: '/defaultbook.jpg',
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching author details:', error);
     return {
       notFound: true,
     };
   }
-
-  const authorBooks = data.books.filter((book) => book.authorId === id);
-
-  return {
-    props: {
-      author,
-      authorBooks,
-      imgPath: '/defaultbook.jpg',
-    },
-  };
 }

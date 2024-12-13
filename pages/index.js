@@ -1,20 +1,35 @@
 import { useRouter } from 'next/router';
-import { Book, ShoppingCart } from 'lucide-react';
+import { Book, ShoppingCart, User } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import BookCard from '@/components/common/book.card';
-import fs from 'fs';
-import path from 'path';
+
 import Navbar from '@/components/common/navbar';
 import { useTheme } from '@/theme.provider';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const imagePath = "/defaultbook.jpg";
 
 export default function HomePage(props) {
 
+  const [books, setBooks] = useState([]);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await axios.get('/api/books/featured');
+        setBooks(response.data);
+      } catch (error) {
+        console.error('Error fetching books:', error);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
   const { theme } = useTheme();
 
-  const { books } = props;
   const router = useRouter();
 
   const handleViewGenres = () => {
@@ -36,8 +51,8 @@ export default function HomePage(props) {
 
   const hLabel2 = () => {
     return (
-      <Button variant="outline" size="icon">
-        <ShoppingCart className="h-4 w-4 text-black" />
+      <Button onClick={()=>router.push('/profile')} variant="outline" size="icon">
+        <User className="h-4 w-4 text-black" />
       </Button>
     )
   }
@@ -69,17 +84,3 @@ export default function HomePage(props) {
     </div>
   );
 }
-
-export const getStaticProps = async () => {
-  const filePath = path.join(process.cwd(), 'Data.json');
-  const jsonData = fs.readFileSync(filePath, 'utf-8');
-  const allbooks = JSON.parse(jsonData).books;
-
-  const books = allbooks.filter(book => book.featured === true);
-
-  return {
-    props: {
-      books,
-    },
-  };
-};

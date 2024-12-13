@@ -3,8 +3,6 @@ import { ArrowLeft, Book, ShoppingCart } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import BookCard from '@/components/common/book.card';
-import fs from 'fs';
-import path from 'path';
 import Link from 'next/link';
 import Navbar from '@/components/common/navbar';
 import { useTheme } from '@/theme.provider';
@@ -61,25 +59,20 @@ export default SpecificGenres;
 
 
 export async function getServerSideProps({ params }) {
-  const filePath = path.join(process.cwd(), 'Data.json');
-  const jsonData = fs.readFileSync(filePath, 'utf-8');
-  const { genres, books } = JSON.parse(jsonData);
 
-  const genre = genres.find((genre) => genre.id === params.id);
+  const res = await fetch(`http://localhost:3000/api/genres/${params.id}`);
+  const data = await res.json();
 
-  if (!genre) {
+  if (!res.ok || !data.genre) {
     return {
       notFound: true,
     };
   }
 
-  const genreBooks = books.filter((book) => book.genreId === params.id);
-
   return {
     props: {
-      genre,
-      genreBooks,
+      genre: data.genre,
+      genreBooks: data.genreBooks,
     },
   };
 }
-
